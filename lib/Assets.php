@@ -12,12 +12,14 @@ final class Assets
      * Render the full asset block for a list of entries (preload + CSS links + HMR client + JS).
      * Pass `null` to use the configured default entries (CSS + JS).
      */
-    public static function renderBlock(?array $entries = null): string
+    public static function renderBlock(?array $entries = null, ?string $nonceAttr = null): string
     {
         $entries = self::normalizeEntries($entries);
         if (empty($entries)) {
             return '';
         }
+
+        $nonceAttr ??= Csp::attr();
 
         $server   = Server::factory();
         $manifest = $server->getManifestArray();
@@ -25,7 +27,7 @@ final class Assets
         $devUrl   = Server::getDevUrl();
         $buildUrl = '/' . trim(Config::get('build_url_path'), '/');
 
-        $preloadHtml = Preload::renderForEntries($entries);
+        $preloadHtml = Preload::renderForEntries($entries, $nonceAttr);
         $cssLinks    = [];
         $jsScripts   = [];
         $hmrEmitted  = false;
@@ -34,13 +36,13 @@ final class Assets
             if ($isDev && $devUrl !== null) {
                 $url = $devUrl . '/' . $entry;
                 if (self::isCssPath($entry)) {
-                    $cssLinks[] = '<link rel="stylesheet" href="' . htmlspecialchars($url) . '">';
+                    $cssLinks[] = self::styleTag($url, $nonceAttr);
                 } else {
                     if (!$hmrEmitted) {
-                        $jsScripts[] = '<script type="module" src="' . htmlspecialchars($devUrl . '/@vite/client') . '"></script>';
+                        $jsScripts[] = self::scriptTag($devUrl . '/@vite/client', $nonceAttr);
                         $hmrEmitted = true;
                     }
-                    $jsScripts[] = '<script type="module" src="' . htmlspecialchars($url) . '"></script>';
+                    $jsScripts[] = self::scriptTag($url, $nonceAttr);
                 }
                 continue;
             }
@@ -52,17 +54,17 @@ final class Assets
             $url  = $buildUrl . '/' . ltrim($file, '/');
 
             if (self::isCssPath($file)) {
-                $cssLinks[] = '<link rel="stylesheet" href="' . htmlspecialchars($url) . '">';
+                $cssLinks[] = self::styleTag($url, $nonceAttr);
                 continue;
             }
 
-            $jsScripts[] = '<script type="module" src="' . htmlspecialchars($url) . '"></script>';
+            $jsScripts[] = self::scriptTag($url, $nonceAttr);
 
             foreach ($manifest[$entry]['css'] ?? [] as $cssChunk) {
                 if (!is_string($cssChunk) || $cssChunk === '') {
                     continue;
                 }
-                $cssLinks[] = '<link rel="stylesheet" href="' . htmlspecialchars($buildUrl . '/' . ltrim($cssChunk, '/')) . '">';
+                $cssLinks[] = self::styleTag($buildUrl . '/' . ltrim($cssChunk, '/'), $nonceAttr);
             }
         }
 
@@ -77,6 +79,24 @@ final class Assets
             $parts[] = $script;
         }
         return implode("\n", $parts);
+    }
+
+    /**
+     * @internal A `<script type="module">` tag for `$url`, optionally carrying
+     * a pre-built nonce attribute (` nonce="…"` from {@see Csp::attr()}).
+     */
+    public static function scriptTag(string $url, string $nonceAttr = ''): string
+    {
+        return '<script type="module" src="' . htmlspecialchars($url) . '"' . $nonceAttr . '></script>';
+    }
+
+    /**
+     * @internal A `<link rel="stylesheet">` tag for `$url`, optionally carrying
+     * a pre-built nonce attribute (` nonce="…"` from {@see Csp::attr()}).
+     */
+    public static function styleTag(string $url, string $nonceAttr = ''): string
+    {
+        return '<link rel="stylesheet" href="' . htmlspecialchars($url) . '"' . $nonceAttr . '>';
     }
 
     /**
