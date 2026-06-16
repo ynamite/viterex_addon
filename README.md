@@ -547,7 +547,23 @@ Die `assets/`-Verzeichnis-Struktur wird mit-committet (Badge-Build + `viterex-vi
 
 ## Bekannte Einschränkungen
 
-- **CSP / Nonces:** Im Dev-Modus emittiert der Output-Filter `<script type="module">` ohne Nonce. Eine strikte CSP mit `script-src 'self'` blockiert HMR. Workaround: CSP im Dev lockern oder einen zusätzlichen Output-Filter mit `LATE`-Priorität registrieren, der die Tags um Nonce-Attribute erweitert.
+- **CSP / Nonces:** ViteRex versieht alle selbst ausgegebenen Tags (Script-, Stylesheet- und relevante Preload-Tags aus `Assets`/`Preload` sowie das Dev-Badge) automatisch mit dem Request-Nonce aus `rex_response::getNonce()`. Eine strikte CSP deines Projekts funktioniert damit out of the box mit den ViteRex-Assets — du musst den Header nur selbst setzen. ViteRex setzt bewusst **keine** CSP: die Policy ist projektweit (Fonts, Analytics, Embeds, Inline-Handler in Modulen/Slices) und gehört dir.
+
+  ```php
+  // z. B. im Config-Template oder in der boot.php deines project-Addons
+  $nonce = rex_response::getNonce();
+  rex_response::setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; "
+      . "script-src 'self' 'nonce-$nonce'; "
+      . "style-src 'self' 'nonce-$nonce'",
+  );
+  ```
+
+  Zwei Einschränkungen bleiben:
+
+  - **Dev/HMR ist best effort.** ViteRex nonced seine eigenen Dev-Tags, aber der Vite-HMR-Client injiziert zur Laufzeit eigene `<script>`/`<style>` (Error-Overlay, eingespritzte Styles), die ViteRex nicht erreicht; Vites `html.cspNonce` ist statisch, nicht pro Request. Empfehlung: CSP im Dev lockern. **Produktion ist sauber.**
+  - **Inline-SVG `<style>`.** `Assets::inline()` kann SVG-Markup mit einem `<style>`-Element zurückgeben. Unter striktem `style-src 'nonce-…'` ohne `'unsafe-inline'` blockiert der Browser dieses. Nicht behandelt.
 
 ---
 

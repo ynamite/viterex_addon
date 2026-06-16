@@ -1,5 +1,22 @@
 # Changelog
 
+## **Version 3.5.0**
+
+### Added
+
+- **CSP nonce support.** Every tag ViteRex emits — `<script type="module">`,
+  `<link rel="stylesheet">`, and the relevant `<link rel="modulepreload">` /
+  `<link rel="preload" as="style">` tags, plus the dev badge — now carries the
+  per-request nonce from `rex_response::getNonce()` (core ≥5.15.0, with a
+  `bin2hex(random_bytes(16))` fallback on older cores). A project-defined strict
+  CSP (`script-src 'self' 'nonce-…'; style-src 'self' 'nonce-…'`) now works with
+  ViteRex assets out of the box. Stamping is always-on (a stray nonce is inert
+  without a CSP) and requires no configuration. New `Ynamite\ViteRex\Csp` helper
+  (`nonce()`, `attr()`). ViteRex deliberately does **not** build or send the CSP
+  header — the policy is page-global and remains the project's responsibility.
+  Dev/HMR remains best-effort (Vite injects its own runtime tags ViteRex cannot
+  reach); production is fully clean.
+
 ## **Version 3.4.2**
 
 - Remove unused imports from boot.php
