@@ -148,4 +148,70 @@ final class PreloadTest extends TestCase
 
         $this->assertSame([], array_filter($lines, static fn(string $l): bool => str_contains($l, 'data-Z.xml')));
     }
+
+    public function testNonceIsStampedOnModulePreloadAndStylePreload(): void
+    {
+        $manifest = [
+            'src/assets/js/main.js' => [
+                'file'    => 'assets/main-X.js',
+                'isEntry' => true,
+                'css'     => ['assets/main-X.css'],
+                'imports' => ['_chunk-AbCd.js'],
+            ],
+            '_chunk-AbCd.js' => [
+                'file' => 'assets/chunk-AbCdEf.js',
+            ],
+        ];
+
+        $lines = Preload::buildLinesForManifest(
+            $manifest,
+            self::BUILD,
+            ['src/assets/js/main.js'],
+            ' nonce="N"',
+        );
+
+        $this->assertContains('<link rel="modulepreload" href="/dist/assets/main-X.js" nonce="N">', $lines);
+        $this->assertContains('<link rel="modulepreload" href="/dist/assets/chunk-AbCdEf.js" nonce="N">', $lines);
+        $this->assertContains('<link rel="preload" href="/dist/assets/main-X.css" as="style" nonce="N">', $lines);
+    }
+
+    public function testNonceIsNotStampedOnFontOrImagePreloads(): void
+    {
+        $manifest = [
+            'src/assets/css/style.css' => [
+                'file'    => 'assets/style-X.css',
+                'isEntry' => true,
+                'assets'  => ['assets/inter-400-A.woff2', 'assets/hero-Y.webp'],
+            ],
+        ];
+
+        $lines = Preload::buildLinesForManifest(
+            $manifest,
+            self::BUILD,
+            ['src/assets/css/style.css'],
+            ' nonce="N"',
+        );
+
+        $this->assertContains(
+            '<link rel="preload" href="/dist/assets/inter-400-A.woff2" as="font" type="font/woff2" crossorigin>',
+            $lines,
+        );
+        $this->assertContains('<link rel="preload" href="/dist/assets/hero-Y.webp" as="image">', $lines);
+        foreach ($lines as $line) {
+            if (str_contains($line, 'as="font"') || str_contains($line, 'as="image"')) {
+                $this->assertStringNotContainsString('nonce=', $line);
+            }
+        }
+    }
+
+    public function testNonceDefaultsToEmptyAndLeavesTagsUnchanged(): void
+    {
+        $manifest = [
+            'src/assets/js/main.js' => ['file' => 'assets/main-X.js', 'isEntry' => true],
+        ];
+
+        $lines = Preload::buildLinesForManifest($manifest, self::BUILD, ['src/assets/js/main.js']);
+
+        $this->assertContains('<link rel="modulepreload" href="/dist/assets/main-X.js">', $lines);
+    }
 }

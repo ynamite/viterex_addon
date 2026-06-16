@@ -23,16 +23,16 @@ final class Preload
         return self::$instance ??= new self();
     }
 
-    public static function renderForEntries(array $entries): string
+    public static function renderForEntries(array $entries, string $nonceAttr = ''): string
     {
-        return self::factory()->build($entries);
+        return self::factory()->build($entries, $nonceAttr);
     }
 
-    private function build(array $entries): string
+    private function build(array $entries, string $nonceAttr = ''): string
     {
         $lines = Server::isDevMode()
             ? []
-            : self::buildLinesForManifest($this->manifest, $this->buildUrlPath, $entries);
+            : self::buildLinesForManifest($this->manifest, $this->buildUrlPath, $entries, $nonceAttr);
 
         $extra = rex_extension::registerPoint(
             new rex_extension_point('VITEREX_PRELOAD', [], [
@@ -63,6 +63,7 @@ final class Preload
         array $manifest,
         string $buildUrlPath,
         array $entries,
+        string $nonceAttr = '',
     ): array {
         $base = '/' . trim($buildUrlPath, '/');
         $lines = [];
@@ -75,7 +76,7 @@ final class Preload
                 continue;
             }
             $visited = [];
-            $lines = array_merge($lines, self::walkEntry($manifest, $manifest[$key], $base, $visited));
+            $lines = array_merge($lines, self::walkEntry($manifest, $manifest[$key], $base, $visited, $nonceAttr));
         }
         return array_values(array_unique($lines));
     }
@@ -87,7 +88,7 @@ final class Preload
      *
      * @return list<string>
      */
-    private static function walkEntry(array $manifest, array $entry, string $base, array &$visited): array
+    private static function walkEntry(array $manifest, array $entry, string $base, array &$visited, string $nonceAttr = ''): array
     {
         $file = $entry['file'] ?? null;
         if (!is_string($file) || isset($visited[$file])) {
@@ -101,11 +102,11 @@ final class Preload
         // CSS entries are emitted as <link rel="stylesheet"> by Assets::renderBlock();
         // skip modulepreload + import-walking for them, but still preload sibling assets.
         if (!$isCss) {
-            $lines[] = self::modulePreload($base, $file);
+            $lines[] = self::modulePreload($base, $file, $nonceAttr);
 
             foreach (($entry['css'] ?? []) as $cssFile) {
                 if (is_string($cssFile)) {
-                    $lines[] = self::stylePreload($base, $cssFile);
+                    $lines[] = self::stylePreload($base, $cssFile, $nonceAttr);
                 }
             }
 
@@ -114,7 +115,7 @@ final class Preload
                     if (is_string($importKey) && isset($manifest[$importKey])) {
                         $lines = array_merge(
                             $lines,
-                            self::walkEntry($manifest, $manifest[$importKey], $base, $visited),
+                            self::walkEntry($manifest, $manifest[$importKey], $base, $visited, $nonceAttr),
                         );
                     }
                 }
@@ -123,7 +124,7 @@ final class Preload
 
         foreach (($entry['assets'] ?? []) as $asset) {
             if (is_string($asset)) {
-                $preload = self::assetPreload($base, $asset);
+                $preload = self::assetPreload($base, $asset, $nonceAttr);
                 if ($preload !== null) {
                     $lines[] = $preload;
                 }
@@ -133,17 +134,17 @@ final class Preload
         return $lines;
     }
 
-    private static function modulePreload(string $base, string $file): string
+    private static function modulePreload(string $base, string $file, string $nonceAttr = ''): string
     {
-        return '<link rel="modulepreload" href="' . htmlspecialchars(self::url($base, $file)) . '">';
+        return '<link rel="modulepreload" href="' . htmlspecialchars(self::url($base, $file)) . '"' . $nonceAttr . '>';
     }
 
-    private static function stylePreload(string $base, string $file): string
+    private static function stylePreload(string $base, string $file, string $nonceAttr = ''): string
     {
-        return '<link rel="preload" href="' . htmlspecialchars(self::url($base, $file)) . '" as="style">';
+        return '<link rel="preload" href="' . htmlspecialchars(self::url($base, $file)) . '" as="style"' . $nonceAttr . '>';
     }
 
-    private static function assetPreload(string $base, string $asset): ?string
+    private static function assetPreload(string $base, string $asset, string $nonceAttr = ''): ?string
     {
         $url = self::url($base, $asset);
         $ext = strtolower(pathinfo($asset, PATHINFO_EXTENSION));
@@ -157,7 +158,7 @@ final class Preload
             in_array($ext, ['mp3', 'wav', 'flac'], true)
                 => '<link rel="preload" href="' . htmlspecialchars($url) . '" as="audio">',
             $ext === 'js'
-                => '<link rel="modulepreload" href="' . htmlspecialchars($url) . '">',
+                => '<link rel="modulepreload" href="' . htmlspecialchars($url) . '"' . $nonceAttr . '>',
             default => null,
         };
     }
