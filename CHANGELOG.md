@@ -1,5 +1,16 @@
 # Changelog
 
+## **Version 3.5.1**
+
+### Fixed
+
+- **One-request fatal during addon update** (`Class "Ynamite\ViteRex\Csp" not
+  found` in `Badge.php`): the old version's badge `OUTPUT_FILTER` closure
+  lazy-loads the new `Badge.php` after files are swapped, before the autoloader
+  knows about `lib/Csp.php`. `install.php` now eagerly requires `Csp` so the
+  late-firing closure resolves it. Takes effect for updates *to* this release
+  and later.
+
 ## **Version 3.5.0**
 
 ### Added
