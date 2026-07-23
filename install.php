@@ -1,7 +1,17 @@
 <?php
 
 use Ynamite\ViteRex\Config;
+use Ynamite\ViteRex\Csp;
 use Ynamite\ViteRex\StubsInstaller;
+
+// During an update, the OLD boot.php has already registered the badge
+// OUTPUT_FILTER closure. It lazy-loads Badge at the end of the request —
+// by then the NEW lib/Badge.php is on disk and references Csp, which the
+// stale rex_autoload classmap can't resolve mid-request → fatal. Eagerly
+// load classes introduced in this version that late-firing EPs may need.
+if (!class_exists(Csp::class)) {
+    require_once __DIR__ . '/lib/Csp.php';
+}
 
 // Seed rex_config with defaults for any unset/empty keys, then write structure.json.
 // On first install everything is unset → all defaults written. On re-install,
