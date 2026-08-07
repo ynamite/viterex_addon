@@ -10,6 +10,7 @@
 
 
 use Ynamite\ViteRex\Badge;
+use Ynamite\ViteRex\Config;
 use Ynamite\ViteRex\Media\SvgHook;
 use Ynamite\ViteRex\OutputFilter;
 use Ynamite\ViteRex\Server;
@@ -17,6 +18,16 @@ use Ynamite\ViteRex\Server;
 rex_fragment::addDirectory(rex_path::addon('project/fragments'));
 rex_fragment::addDirectory(rex_path::base('src/fragments'));
 
+// Regenerate structure.json on every cache clear. Its host_url snapshot goes
+// stale when the yrewrite default domain changes after this addon was
+// installed (classic case: an installer seeds the DB after package:install,
+// leaving host_url as yrewrite's unconfigured "http://." placeholder — the
+// Vite plugin then serves that as its CORS origin). LATE so yrewrite has
+// rebuilt its own domain data first. Registered before the badge's
+// clear-cache endpoint below so that path resyncs too.
+rex_extension::register('CACHE_DELETED', static function (): void {
+    Config::syncStructureJson();
+}, rex_extension::LATE);
 
 if ('' !== (string) rex_request::request('viterex_clear_cache', 'string', '')) {
     if (rex_backend_login::hasSession() && rex_csrf_token::factory('viterex_badge')->isValid()) {

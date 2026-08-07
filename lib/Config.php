@@ -104,8 +104,15 @@ final class Config
     public static function getHostUrl(): string
     {
         if (rex_addon::get('yrewrite')->isAvailable()) {
-            $domain = rex_yrewrite::getDefaultDomain();
-            if ($domain !== null) {
+            // NOT getDefaultDomain(): that returns the synthetic catch-all
+            // rex_yrewrite::init() registers under the name 'default' (host
+            // null). Its getUrl() builds from $_SERVER — fine in a web
+            // request, but in CLI (console cache:clear) it yields "http://.".
+            // The first real domain (host !== null) is the configured one.
+            foreach (rex_yrewrite::getDomains() as $domain) {
+                if (null === $domain->getHost()) {
+                    continue;
+                }
                 $url = rtrim($domain->getUrl(), '/');
                 if ($url !== '') {
                     return $url;

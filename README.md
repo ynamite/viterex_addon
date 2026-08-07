@@ -95,6 +95,8 @@ Backend → _AddOns → ViteRex → Einstellungen_ öffnen. Defaults sind für d
 
 Speichern → die Einstellungen werden in `rex_config` gespeichert und gespiegelt nach `structure.json`, das vom Vite-Plugin auf der Node-Seite gelesen wird.
 
+> `structure.json` wird zusätzlich bei **jedem Cache-Löschen** neu generiert (z.B. `bin/console cache:clear` oder der Cache-Button im Dev-Badge). Ein veralteter `host_url` — etwa wenn die yrewrite-Default-Domain erst *nach* der Addon-Installation konfiguriert wurde — heilt sich damit von selbst.
+
 ### 2. Stubs installieren
 
 Auf den Knopf **„Stubs installieren"** klicken. Das Häkchen _„Existierende Dateien überschreiben"_ steuert das Verhalten bei vorhandenen Dateien:

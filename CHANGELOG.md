@@ -1,5 +1,26 @@
 # Changelog
 
+## **Version 3.5.2**
+
+### Fixed
+
+- **Bogus `host_url` (`http://.`) in `structure.json`** (Vite dev server
+  answering with `Access-Control-Allow-Origin: http://.`). Two defects, both
+  fixed:
+  - `Config::getHostUrl()` used `rex_yrewrite::getDefaultDomain()`, which
+    returns yrewrite's *synthetic catch-all* (host `null`), not the configured
+    domain. Its URL is built from `$_SERVER`, so any CLI context — console
+    commands, an installer running `package:install` — produced `http://.`.
+    `getHostUrl()` now picks the first real yrewrite domain (host set) and
+    only then falls back to `$_SERVER`.
+  - `structure.json` was only written on addon install and on saving the
+    settings page, so yrewrite domains configured *afterwards* (e.g. an
+    installer seeding the database after `package:install`) never reached the
+    file. It is now regenerated on every cache clear (`CACHE_DELETED`
+    extension point, `LATE` so yrewrite rebuilds its own data first) — a
+    plain `bin/console cache:clear` or the dev badge's cache-clear button
+    self-heals a stale `host_url`.
+
 ## **Version 3.5.1**
 
 ### Fixed
