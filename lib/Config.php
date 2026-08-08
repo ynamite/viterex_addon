@@ -2,11 +2,13 @@
 
 namespace Ynamite\ViteRex;
 
+use rex;
 use rex_addon;
 use rex_config;
 use rex_file;
 use rex_path;
-use rex_yrewrite;
+use rex_sql;
+use rex_sql_exception;
 
 /**
  * Single source of truth for ViteRex paths and runtime config.
@@ -104,24 +106,62 @@ final class Config
     public static function getHostUrl(): string
     {
         if (rex_addon::get('yrewrite')->isAvailable()) {
-            // NOT getDefaultDomain(): that returns the synthetic catch-all
-            // rex_yrewrite::init() registers under the name 'default' (host
-            // null). Its getUrl() builds from $_SERVER — fine in a web
-            // request, but in CLI (console cache:clear) it yields "http://.".
-            // The first real domain (host !== null) is the configured one.
-            foreach (rex_yrewrite::getDomains() as $domain) {
-                if (null === $domain->getHost()) {
-                    continue;
-                }
-                $url = rtrim($domain->getUrl(), '/');
-                if ($url !== '') {
+            // Read the domain table directly instead of rex_yrewrite::getDomains():
+            // the static domain state is built at boot from yrewrite's cached
+            // config.php, which is one boot behind when the DB was seeded after
+            // that cache was generated (e.g. an installer seeding after
+            // package:install — the CLI cache:clear then still sees no domains).
+            // The DB is the source of truth and always current.
+            try {
+                $rows = rex_sql::factory()->getArray(
+                    'SELECT domain, start_id, notfound_id FROM ' . rex::getTable('yrewrite_domain') . ' ORDER BY mount_id, clangs',
+                );
+                $url = self::hostUrlFromDomainRows($rows);
+                if (null !== $url) {
                     return $url;
                 }
+            } catch (rex_sql_exception) {
+                // fall through to the $_SERVER fallback
             }
         }
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
         return $protocol . '://' . $host;
+    }
+
+    /**
+     * First usable host URL from rex_yrewrite_domain rows, normalized the same
+     * way rex_yrewrite::generateConfig() + rex_yrewrite_domain build URLs
+     * (scheme kept, http default, port kept, trailing slash trimmed). Rows
+     * without a domain or without mounted start/notfound articles are skipped,
+     * mirroring yrewrite's own filter.
+     *
+     * @param list<array{domain: string, start_id: int|string, notfound_id: int|string}> $rows
+     */
+    public static function hostUrlFromDomainRows(array $rows): ?string
+    {
+        foreach ($rows as $row) {
+            $name = (string) $row['domain'];
+            if ('' === $name || (int) $row['start_id'] <= 0 || (int) $row['notfound_id'] <= 0) {
+                continue;
+            }
+            if (!str_contains($name, '//')) {
+                $name = '//' . $name;
+            }
+            $parts = parse_url($name);
+            if (false === $parts || !isset($parts['host'])) {
+                continue;
+            }
+            $url = ($parts['scheme'] ?? 'http') . '://' . $parts['host'];
+            if (isset($parts['port'])) {
+                $url .= ':' . $parts['port'];
+            }
+            if (isset($parts['path'])) {
+                $url .= rtrim($parts['path'], '/');
+            }
+            return $url;
+        }
+        return null;
     }
 
     /**

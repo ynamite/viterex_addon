@@ -1,5 +1,23 @@
 # Changelog
 
+## **Version 3.5.3**
+
+### Fixed
+
+- **Stale `host_url` (`http://localhost`) in `structure.json` after a seeded
+  install** (Vite dev server answering with
+  `Access-Control-Allow-Origin: http://localhost`). The 3.5.2 fix regenerated
+  the file on every cache clear, but `Config::getHostUrl()` read the domain
+  from `rex_yrewrite::getDomains()` — static state built at boot from
+  yrewrite's *cached* `config.php`. When the database is seeded after that
+  cache was generated (create-viterex: `package:install` → seed →
+  `cache:clear`), the CLI cache-clear process still saw zero domains and
+  wrote `localhost`; only the *next* cache clear picked up the domain — and a
+  dev server started in between kept the wrong CORS origin until restarted.
+  `getHostUrl()` now queries the `rex_yrewrite_domain` table directly (source
+  of truth, always current), normalizing rows the same way yrewrite does
+  (new pure helper `Config::hostUrlFromDomainRows()`, unit-tested).
+
 ## **Version 3.5.2**
 
 ### Fixed
