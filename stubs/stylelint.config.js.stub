@@ -1,0 +1,45 @@
+export default {
+	extends: ["stylelint-config-standard"],
+	ignoreFiles: [
+		"**/node_modules/**",
+		"**/vendor/**",
+		"**/dist/**",
+		"**/redaxo/**",
+		"**/src/core/**",
+		"**/src/addons/**",
+		"**/assets/core/**",
+		"**/assets/addons/**",
+		"**/public/**",
+		"**/var/**",
+	],
+	rules: {
+		// Tailwind 4 CSS-first syntax
+		"at-rule-no-unknown": [
+			true,
+			{
+				ignoreAtRules: [
+					"theme",
+					"utility",
+					"variant",
+					"custom-variant",
+					"source",
+					"plugin",
+					"apply",
+					"config",
+					"reference",
+				],
+			},
+		],
+		"at-rule-no-deprecated": [true, { ignoreAtRules: ["apply"] }],
+		"function-no-unknown": [true, { ignoreFunctions: ["--value", "--modifier", "--alpha", "--spacing", "theme"] }],
+		// Tailwind emits `&` at @utility root and theme() inside media queries
+		"nesting-selector-no-missing-scoping-root": null,
+		"media-query-no-invalid": null,
+		// project conventions
+		"custom-property-pattern": null,
+		"selector-class-pattern": null,
+		"import-notation": "string",
+		"number-max-precision": null,
+		"no-descending-specificity": null,
+	},
+};

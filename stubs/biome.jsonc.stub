@@ -1,0 +1,90 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		// Exclude everything that isn't project-authored: Redaxo core, installed
+		// addons, shipped/built assets, and generated data — in both the classic
+		// (redaxo/) and modern (src/ + public/) layouts.
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/vendor",
+			"!**/redaxo",
+			"!**/dist",
+			"!**/assets/addons/**/*.*",
+			"!**/assets/core",
+			"!**/src/addons",
+			"!**/src/core",
+			"!**/public",
+			"!**/var",
+			// machine-managed manifests (composer / npm / StubsInstaller rewrite
+			// them with their own JSON formatting)
+			"!**/composer.json",
+			"!**/package.json"
+		]
+	},
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineWidth": 120
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always",
+			"trailingCommas": "all"
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"overrides": [
+		{
+			// Tailwind 4 syntax biome misreads: --value()/--modifier() in @utility,
+			// custom props redefined inside @variant blocks, deliberate !important.
+			"includes": ["**/*.css"],
+			"linter": {
+				"rules": {
+					"correctness": { "noUnknownFunction": "off" },
+					"suspicious": { "noDuplicateCustomProperties": "off" },
+					"complexity": { "noImportantStyles": "off" },
+					"style": { "noDescendingSpecificity": "off" }
+				}
+			}
+		},
+		{
+			// Pre-existing starter-lib smells (massif frontend scaffold), downgraded
+			// so they surface without gating; project JS outside these dirs keeps
+			// the full error gate.
+			"includes": ["**/js/lib/**", "**/js/utils/**", "**/js/swup/**"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noConstructorReturn": "warn",
+						"noInnerDeclarations": "warn",
+						"noUnsafeOptionalChaining": "warn"
+					},
+					"suspicious": {
+						"useIterableCallbackReturn": "warn",
+						"noAssignInExpressions": "warn",
+						"noDocumentCookie": "warn"
+					}
+				}
+			}
+		}
+	]
+}

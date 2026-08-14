@@ -1,5 +1,43 @@
 # Changelog
 
+## **Version 3.5.4**
+
+### Fixed
+
+- **Shipped `stubs/biome.jsonc` broke biome in user projects.** Biome's
+  tree-wide config discovery found the stub under
+  `src/addons/viterex_addon/stubs/` as a second root config and aborted
+  before checking anything — and since the scaffolded `lint` script is
+  `biome check && stylelint …`, stylelint never ran either. The stub now
+  ships as `biome.jsonc.stub` (invisible to discovery) and is renamed to
+  `biome.jsonc` at install time by `StubsInstaller`.
+- **Scaffolded biome config now excludes non-user code.** With the config
+  collision gone, `biome check` would flood the gate with findings from
+  vendored/generated files. The stub's `files.includes` now also excludes
+  `**/src/addons`, `**/src/core`, `**/assets/core`, and `**/var`, and drops
+  the legacy re-include of `**/assets/addons/viterex_addon/**` (shipped
+  plugin JS, badge build, and Vite build output — none of it user-authored).
+  Existing projects keep their scaffolded `biome.jsonc`; apply the same
+  excludes manually or re-install stubs with overwrite.
+- **Shipped `stubs/stylelint.config.js` leaked into stub files via stylelint's
+  per-file upward config lookup.** Now ships as `stylelint.config.js.stub`,
+  renamed at install time like the biome stub.
+- **Lint/format script globs scoped to the assets source dir.** The
+  `package.json` stub's `stylelint`/`prettier` globs were `**/*` — in a real
+  install they matched core, addon, and vendored files. They now carry a
+  `__VITEREX_ASSETS_SOURCE_DIR__` token that `StubsInstaller` replaces with
+  the configured `assets_source_dir` at scaffold time.
+
+### Changed
+
+- **Scaffolded biome + stylelint configs understand Tailwind 4** (`@theme`,
+  `@utility`, `@variant`, `--value()`/`--modifier()` …) and exclude
+  machine-managed manifests (`composer.json`, `package.json`) from the format
+  gate. Known smells in the massif starter libs (`js/lib`, `js/utils`,
+  `js/swup`) are downgraded to warnings so they surface without gating.
+- **Stub `vite.config.js` and `style.css` now pass the scaffolded lint gate**
+  (auto-fixed with the shipped configs).
+
 ## **Version 3.5.3**
 
 ### Fixed

@@ -22,6 +22,15 @@ npm run watch       # rebuild on change to assets-src/*
 
 **`package.yml` is the single source of truth for the addon version** — never bump `package.json` directly. After bumping `package.yml`, run `npm run version:sync` to mirror the value into `package.json`. (`npm run build` also runs this via its `prebuild` hook, so a build covers it implicitly — but you don't need a full build just to sync the version.)
 
+**Running the PHP tests** (PHPUnit 10, no Redaxo runtime needed — tests target pure seams):
+
+```bash
+composer install
+composer test                                  # full suite
+vendor/bin/phpunit tests/OutputFilterTest.php  # one file
+vendor/bin/phpunit --filter testMethodName     # one test
+```
+
 **The user-project Vite chain** lives in `stubs/` — those files are copied into a Redaxo project root by `StubsInstaller`. The user runs `npm install && npm run dev` _in their project_, not here. Don't run `vite dev` in this repo; the local `vite.config.js` is wired to build the badge to `../assets/badge`, not to serve a dev server.
 
 ## Architecture: the PHP ↔ Node bridge
@@ -45,7 +54,7 @@ The pipeline is `boot.php` → `OutputFilter::register` → `OutputFilter::rewri
 
 Placeholder forms: `REX_VITE` (default entries), `REX_VITE[src="x.js"]` (one), `REX_VITE[src="a.css|b.js"]` (pipe-separated). Regex uses `(?<!\w)` so `REX_VITES` etc. don't match. Multiple placeholders in `<head>` are not supported — use the pipe-separated form for multiple entries.
 
-## Architecture: CSP nonces
+## Architecture: CSP nonces (v3.5.0)
 
 Every tag ViteRex emits carries `Csp::attr()` (` nonce="<rex_response::getNonce()>"`), stamped at build time in `Assets::renderBlock` (via the `scriptTag`/`styleTag` helpers), `Preload` (modulepreload + `as="style"` only), and `Badge` — never via a post-pass regex over the document. `lib/Csp.php` is the only seam to core's nonce and is the single place that falls back to a local hex nonce when `rex_response::getNonce()` is absent (core <5.15.0). The nonce flows through `OutputFilter::rewriteHtml`, so the block_peek backend preview inherits the correct nonce automatically. ViteRex owns no `Content-Security-Policy` header — that's the project's, and it's deliberately out of scope (see the design spec `docs/superpowers/specs/2026-06-16-csp-nonce-support-design.md`).
 
@@ -66,7 +75,7 @@ Default Vite live-reload globs (in `Config::DEFAULT_REFRESH_GLOBS`) include `.vi
 There are **two distinct asset-distribution mechanisms**:
 
 1. **`assets/`** (top-level): Redaxo auto-copies an addon's `assets/` tree to `<frontend>/assets/addons/<addon>/` on every (re)install. This is how `viterex-vite-plugin.js` and `dev-server-index.html` end up where the user's `vite.config.js` imports them. Anything committed under `assets/` ships to user projects automatically — that's why `assets/badge/` build output is committed.
-2. **`stubs/`**: copied to the project root **on demand** when the user clicks "Install stubs". `StubsInstaller::resolveStubs()` is the source of truth for what gets copied where. The `vite.config.js` stub has a `__VITEREX_PLUGIN_IMPORT_PATH__` token replaced at scaffold time with the structure-aware path (e.g., `./public/assets/addons/viterex_addon/...` for modern, `./assets/addons/viterex_addon/...` for classic with empty public_dir). Backups (`*.bak.YYYYmmdd-HHiiss`) are written before any overwrite.
+2. **`stubs/`**: copied to the project root **on demand** when the user clicks "Install stubs". Config files that tools discover by tree-scanning or per-file lookup must ship with a `.stub` suffix (currently `biome.jsonc.stub` and `stylelint.config.js.stub`, mapped back to their real names in `resolveStubs()`) — biome's config discovery in the *user's project* otherwise finds the shipped copy under `src/addons/viterex_addon/stubs/` as a second root config and aborts the whole check, and stylelint's upward config lookup picks the stub config up for stub files. The `package.json` stub carries a `__VITEREX_ASSETS_SOURCE_DIR__` token (replaced at scaffold time, like the vite.config.js one) so the lint/format script globs stay scoped to the user's source dir and never touch core/addon/vendored files. `StubsInstaller::resolveStubs()` is the source of truth for what gets copied where. The `vite.config.js` stub has a `__VITEREX_PLUGIN_IMPORT_PATH__` token replaced at scaffold time with the structure-aware path (e.g., `./public/assets/addons/viterex_addon/...` for modern, `./assets/addons/viterex_addon/...` for classic with empty public_dir). Backups (`*.bak.YYYYmmdd-HHiiss`) are written before any overwrite.
 
 The `package.yml` `installer_ignore` list excludes `stubs/`'s ancestors and dev-tooling configs from the Redaxo Installer zip — but **`stubs/` itself ships** (the installer needs them).
 
@@ -109,6 +118,7 @@ Before tagging a release:
 - **CSP nonces are stamped on every emitted tag** via `Csp::attr()` (`lib/Csp.php`), which wraps `rex_response::getNonce()` (core ≥5.15.0; falls back to a static `bin2hex(random_bytes(16))` on older cores so the `^5.13` floor holds). Always-on — a stray `nonce` is inert without a CSP, mirroring core's unconditional stamping. ViteRex never sends a CSP header; the policy is the project's. Dev/HMR is best-effort (Vite injects its own untouchable runtime tags) and inline-SVG `<style>` under strict `style-src` is unhandled — both documented in README. Placement is unit-tested via the pure seams `Csp::buildAttr`, `Assets::scriptTag`/`styleTag`, and `Preload::buildLinesForManifest($manifest, $base, $entries, $nonceAttr)`. Font/image/media preloads are intentionally **not** nonced (those directives don't honor nonces).
 - **SVGO config has one canonical source: `assets/svgo-config.mjs`.** Both runtimes consume it directly — the Vite plugin via `import VITEREX_SVGO_CONFIG from "./svgo-config.mjs"`, `SvgoCli` via `npx svgo --config <abs-path>`. Never define a parallel plugin list in PHP or JS — they will silently drift (this happened in 3.3.0 development). If per-file extensions are ever needed, splice into the canonical config at the call site (both runtimes can read the file and extend it).
 - **`IdPrefixer` runs at `Assets::inline()` time only — not at the source-mutation pass.** Reason: the prefix is filename-derived, so baking it onto disk would commit a Viterex-specific class-name scheme into the source SVG and prevent the file's reuse as `<img src>` / `background-image`. Inline-time application keeps disk files generic; the cache (`rex_path::addonCache('viterex_addon', 'inline-svg/')`) absorbs the rewrite cost so subsequent inlines are pure file reads. Per-file opt-out: `<!-- viterex:no-prefix -->` magic comment anywhere in the SVG.
+- **`host_url` in `structure.json` is resolved by `Config::getHostUrl()` reading the `rex_yrewrite_domain` DB table directly — never via `rex_yrewrite::getDomains()`.** The static domain state is built at boot from yrewrite's cached `config.php`, which is one boot behind when the DB was seeded after that cache was generated (installer flows) — that stale path produced the `http://.` / `http://localhost` bugs fixed in v3.5.1–3.5.3. Row filtering/normalization lives in the pure seam `Config::hostUrlFromDomainRows()` (tested in `tests/HostUrlTest.php`); falls back to `$_SERVER` when yrewrite is absent or has no usable domain.
 - **`IdPrefixer` only scopes locally-`<style>`-defined classes (since v3.4.0).** Class tokens in `class="..."` are prefixed only when a matching class selector appears in the SVG's own `<style>` block. External classes (Tailwind utilities, project CSS, BEM) pass through unchanged so host-page CSS keeps targeting them. To scope a class, define it in the SVG's `<style>`. The cache key at `Assets::inline()` is versioned by `IdPrefixer::VERSION` — bump that constant when changing the prefixer's behavior so old cache entries get bypassed on upgrade.
 
 ## Roadmap

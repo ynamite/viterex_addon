@@ -7,8 +7,8 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"setup-https": "mkcert -install && mkcert localhost 127.0.0.1 ::1",
-		"format": "biome format --write && prettier --write \"**/*.{html,css,scss}\"",
-		"lint": "biome check && stylelint \"**/*.{css,scss}\""
+		"format": "biome format --write && prettier --write \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{html,css,scss}\"",
+		"lint": "biome check && stylelint \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{css,scss}\""
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.13",

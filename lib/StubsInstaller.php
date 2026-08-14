@@ -183,8 +183,10 @@ final class StubsInstaller
             '.env.example'        => '/.env.example',
             '.browserslistrc'     => '/.browserslistrc',
             '.prettierrc'         => '/.prettierrc',
-            'biome.jsonc'         => '/biome.jsonc',
-            'stylelint.config.js' => '/stylelint.config.js',
+            // shipped with a .stub suffix so biome's tree-wide config discovery
+            // in the user's project doesn't find it as a second root config
+            'biome.jsonc.stub'    => '/biome.jsonc',
+            'stylelint.config.js.stub' => '/stylelint.config.js',
             'jsconfig.json'       => '/jsconfig.json',
             'main.js'             => '/' . $sourceDir . '/js/main.js',
             'style.css'           => '/' . $sourceDir . '/css/style.css',
@@ -198,6 +200,15 @@ final class StubsInstaller
             $contents = str_replace(
                 '__VITEREX_PLUGIN_IMPORT_PATH__',
                 self::resolveViterexPluginImportPath(),
+                $contents,
+            );
+        }
+        if (basename($source) === 'package.json') {
+            // scope lint/format globs to the user's assets source dir so the
+            // scripts never touch core/addon/vendored files
+            $contents = str_replace(
+                '__VITEREX_ASSETS_SOURCE_DIR__',
+                trim(Config::get('assets_source_dir'), '/'),
                 $contents,
             );
         }
