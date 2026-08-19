@@ -1,5 +1,18 @@
 # Changelog
 
+## **Version 3.5.5**
+
+### Fixed
+
+- **Scaffolded Tailwind `@source` globs were silently dead.** The stub's
+  `@source "/src/…"` paths resolve as absolute filesystem paths and matched
+  nothing — Tailwind's default whole-project heuristic scan carried every
+  project unnoticed, and also tokenized docs/markdown prose into bogus class
+  candidates (spurious `tailwind-clamp` warnings at build time, e.g.
+  `clamp-[text,…]`). The stub now uses `@import "tailwindcss" source(none)`
+  with stylesheet-relative globs (incl. `src/assets/js` for Alpine class
+  getters), making scanning explicit-only and deterministic.
+
 ## **Version 3.5.4**
 
 ### Fixed
