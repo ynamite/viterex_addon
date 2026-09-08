@@ -1,5 +1,15 @@
 # Changelog
 
+## **Version 3.5.6**
+
+### Fixed
+
+- **`stubs/style.css`: a glob inside a CSS comment closed it early.** The
+  commented-out `@source "../../fragments/**/*.php";` contains `*/` (inside
+  `**/`), so the comment ended after `/**` and left stray tokens in the
+  scaffolded stylesheet. The hint now suggests the directory form
+  `@source "../../fragments";`, which Tailwind scans recursively.
+
 ## **Version 3.5.5**
 
 ### Fixed
