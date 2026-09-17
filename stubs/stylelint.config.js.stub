@@ -31,6 +31,8 @@ export default {
 			},
 		],
 		"at-rule-no-deprecated": [true, { ignoreAtRules: ["apply"] }],
+		// `@apply foo bar` is not a prelude stylelint can parse (`media` is the upstream default we override)
+		"at-rule-prelude-no-invalid": [true, { ignoreAtRules: ["media", "apply"] }],
 		"function-no-unknown": [true, { ignoreFunctions: ["--value", "--modifier", "--alpha", "--spacing", "theme"] }],
 		// Tailwind emits `&` at @utility root and theme() inside media queries
 		"nesting-selector-no-missing-scoping-root": null,
