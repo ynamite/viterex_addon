@@ -1,5 +1,19 @@
 # Changelog
 
+## **Version 3.5.8**
+
+### Fixed
+
+- **`stubs/stylelint.config.js`: every Tailwind `@apply` failed the lint.**
+  `stylelint-config-standard` enables `at-rule-prelude-no-invalid`, which
+  cannot parse a utility list (`@apply flex gap-2`) and reported
+  `Invalid prelude … for at-rule "@apply"` on each one. The scaffolded config
+  now ignores `@apply` for that rule (keeping the upstream `media` ignore),
+  like it already does for `at-rule-no-unknown` and `at-rule-no-deprecated`.
+  Existing projects: re-run "Install stubs", or add
+  `"at-rule-prelude-no-invalid": [true, { ignoreAtRules: ["media", "apply"] }]`
+  to the `rules` of your `stylelint.config.js` by hand.
+
 ## **Version 3.5.7**
 
 ### Fixed
