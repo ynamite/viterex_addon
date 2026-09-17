@@ -1,5 +1,16 @@
 # Changelog
 
+## **Version 3.5.7**
+
+### Fixed
+
+- **`stubs/.gitignore.example`: `vendor/` and `.tools/` matched at every
+  depth.** The unanchored patterns also ignored nested directories such as a
+  project-local addon's committed `src/addons/<addon>/vendor`. They are now
+  anchored to the project root (`/vendor/`, `/.tools/`). Existing projects
+  keep their old lines — "Install stubs" only appends the new ones, so remove
+  the unanchored `vendor/` / `.tools/` entries by hand if they bite.
+
 ## **Version 3.5.6**
 
 ### Fixed
