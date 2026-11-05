@@ -72,23 +72,21 @@ function detectTlsCerts(cwd) {
 	return null;
 }
 
-function resolveCopyTargets(structure) {
+export function resolveCopyTargets(structure) {
 	const dirs = (structure.copy_dirs || "img")
 		.split(",")
 		.map((d) => d.trim())
 		.filter(Boolean);
 	const sourceRel = (structure.assets_source_dir || "src/assets").replace(/^\/+|\/+$/g, "");
 	return dirs.map((dir) => ({
-		src: `${sourceRel}/${dir}/*`,
+		// `**/*`, not `*`: subfolders (`img/icons/…`) must ship too, or
+		// Assets::inline()/url() find nothing in a build.
+		src: `${sourceRel}/${dir}/**/*`,
 		dest: `${structure.assets_sub_dir}/${dir}`,
-		// vite-plugin-static-copy v4 preserves the source's directory tree
-		// under `dest` by default (a regression from v3's flat-copy behavior).
-		// Without this, `src/assets/img/foo.svg` lands at
-		// `<outDir>/assets/img/src/assets/img/foo.svg` instead of
-		// `<outDir>/assets/img/foo.svg`. `stripBase: true` strips the matched
-		// path's directory components so the basename joins `dest` directly.
-		// No-op on v3 (flat was the default).
-		rename: { stripBase: true },
+		// vite-plugin-static-copy v4 preserves the matched path's directory
+		// tree under `dest`. Strip only the source base (`src/assets/img`), so
+		// `src/assets/img/icons/foo.svg` lands at `<outDir>/assets/img/icons/foo.svg`.
+		rename: { stripBase: `${sourceRel}/${dir}`.split("/").length },
 	}));
 }
 
