@@ -65,6 +65,31 @@ final class PreloadTest extends TestCase
         $this->assertContains('<link rel="modulepreload" href="/dist/assets/chunk-AbCdEf.js">', $lines);
     }
 
+    /**
+     * Regression: lazy `import()` chunks must not be preloaded. Preloading them defeated the lazy load (every page fetched
+     * every component's JS + CSS), and Vite later requests their CSS with `crossorigin`, so the uncredentialed preload went
+     * unused and the file was downloaded twice ("credentials mode does not match").
+     */
+    public function testDynamicImportsAreNotPreloaded(): void
+    {
+        $manifest = [
+            'src/assets/js/main.js' => [
+                'file'           => 'assets/main-X.js',
+                'isEntry'        => true,
+                'dynamicImports' => ['src/assets/js/components/slider.js'],
+            ],
+            'src/assets/js/components/slider.js' => [
+                'file'   => 'assets/slider-Y.js',
+                'css'    => ['assets/slider-Y.css'],
+                'assets' => ['assets/slider-arrow.svg'],
+            ],
+        ];
+
+        $lines = Preload::buildLinesForManifest($manifest, self::BUILD, ['src/assets/js/main.js']);
+
+        $this->assertSame(['<link rel="modulepreload" href="/dist/assets/main-X.js">'], $lines);
+    }
+
     public function testJsEntryEmitsCssSiblingAsStylePreload(): void
     {
         $manifest = [

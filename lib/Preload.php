@@ -110,14 +110,14 @@ final class Preload
                 }
             }
 
-            foreach (['imports', 'dynamicImports'] as $importType) {
-                foreach (($entry[$importType] ?? []) as $importKey) {
-                    if (is_string($importKey) && isset($manifest[$importKey])) {
-                        $lines = array_merge(
-                            $lines,
-                            self::walkEntry($manifest, $manifest[$importKey], $base, $visited, $nonceAttr),
-                        );
-                    }
+            // Static imports only, like Vite itself: lazy `import()` chunks load on demand (preloading them defeats that,
+            // and Vite requests their CSS with `crossorigin`, so an uncredentialed preload would go unused).
+            foreach (($entry['imports'] ?? []) as $importKey) {
+                if (is_string($importKey) && isset($manifest[$importKey])) {
+                    $lines = array_merge(
+                        $lines,
+                        self::walkEntry($manifest, $manifest[$importKey], $base, $visited, $nonceAttr),
+                    );
                 }
             }
         }
