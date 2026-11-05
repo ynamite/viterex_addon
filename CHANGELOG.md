@@ -1,5 +1,18 @@
 # Changelog
 
+## **Version 3.5.9**
+
+### Fixed
+
+- **Lazy `import()` chunks were preloaded on every page.** `Preload` walked
+  the manifest's `dynamicImports`, so every lazily imported component's JS,
+  CSS and assets were preloaded up front, defeating the lazy load. Vite
+  requests lazy CSS with `crossorigin`, so the uncredentialed
+  `<link rel="preload" as="style">` also went unused and the file was
+  downloaded twice (console: "A preload … is found, but is not used because
+  the request credentials mode does not match"). Only static `imports` are
+  walked now, like Vite itself does.
+
 ## **Version 3.5.8**
 
 ### Fixed
