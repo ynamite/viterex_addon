@@ -1,5 +1,24 @@
 # Changelog
 
+## **Version 3.5.10**
+
+### Fixed
+
+- **`copy_dirs` subfolders were missing from builds.** The Vite plugin
+  copied only `<assets_source_dir>/<dir>/*`, so nested files
+  (`img/icons/foo.svg`) never reached `<out_dir>`, and `Assets::inline()` /
+  `Assets::url()` found nothing for them in production. It now copies
+  `<dir>/**/*` and strips only the source base, so the subfolder tree is
+  kept: `src/assets/img/icons/foo.svg` → `<out_dir>/assets/img/icons/foo.svg`.
+
+### Changed
+
+- **`stubs/package.json`:** `vite-plugin-static-copy` bumped to `^4.1.0`
+  (the plugin's `rename: { stripBase }` option needs v4).
+
+Existing projects: run `npm install vite-plugin-static-copy@^4.1.0` if your
+`package.json` still pins v3, then rebuild.
+
 ## **Version 3.5.9**
 
 ### Fixed
