@@ -1,6 +1,7 @@
 # Added by viterex
 node_modules/
 /vendor/
+/.build
 /.tools/
 *.local
 .env
