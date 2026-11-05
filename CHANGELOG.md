@@ -13,6 +13,15 @@
   the request credentials mode does not match"). Only static `imports` are
   walked now, like Vite itself does.
 
+### Changed
+
+- **`stubs/biome.jsonc`:** schema bumped to Biome 2.5.9, and Biome's CSS
+  formatter is disabled.
+- **`stubs/.gitignore.example`:** ignores `/.build`.
+
+Existing projects: re-run "Install stubs" to pick these up ("Install stubs"
+only appends missing `.gitignore` lines).
+
 ## **Version 3.5.8**
 
 ### Fixed
