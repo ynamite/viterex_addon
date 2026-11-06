@@ -33,6 +33,8 @@ vendor/bin/phpunit --filter testMethodName     # one test
 
 **The user-project Vite chain** lives in `stubs/` — those files are copied into a Redaxo project root by `StubsInstaller`. The user runs `npm install && npm run dev` _in their project_, not here. Don't run `vite dev` in this repo; the local `vite.config.js` is wired to build the badge to `../assets/badge`, not to serve a dev server.
 
+The stub toolchain requires Node.js `^22.12.0 || >=24.0.0`: `vite-plugin-static-copy` 4.1 requires Node 22 or >=24, and Vite 8 requires >=22.12 on the Node 22 line.
+
 ## Architecture: the PHP ↔ Node bridge
 
 The hardest thing to grok is how state flows between Redaxo (PHP runtime) and Vite (Node build). Three persistence layers tie them together:

@@ -24,7 +24,10 @@
 			// machine-managed manifests (composer / npm / StubsInstaller rewrite
 			// them with their own JSON formatting)
 			"!**/composer.json",
-			"!**/package.json"
+			"!**/package.json",
+			// written by the developer addon on every sync
+			"!**/metadata.yml",
+			"!**/*.metadata.yml"
 		]
 	},
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },

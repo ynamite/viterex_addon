@@ -1,5 +1,15 @@
 # Changelog
 
+## **Unreleased**
+
+### Fixed
+
+- **Project stubs exclude developer addon metadata from Biome**, preserving its YAML formatting on every sync.
+- **Project stubs declare the toolchain's Node minimum:** Node.js `^22.12.0 || >=24.0.0`, required by
+  `vite-plugin-static-copy` 4.1 and Vite 8.
+- **Scaffolded Vite config imports follow Biome's order** for both modern and classic layouts.
+- **`format` now exits non-zero for CSS errors Stylelint cannot fix**, rather than reporting success after Prettier.
+
 ## **Version 3.5.11**
 
 ### Fixed

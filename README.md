@@ -54,7 +54,7 @@ ViteRex deckt den kompletten Frontend-Workflow für REDAXO ab — von der ersten
 
 - **REDAXO** `>= 5.13`
 - **PHP** `>= 8.3` (war `>= 8.1` bis v3.2.x — siehe CHANGELOG)
-- **Node.js** `>= 18`, **npm** `>= 9`
+- **Node.js** `22.x >= 22.12.0` oder `>= 24.0.0`, **npm** `>= 9`
 
 Empfohlene REDAXO-Addons (optional, aber sinnvoll):
 

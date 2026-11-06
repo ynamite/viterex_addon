@@ -1,6 +1,6 @@
-import viterex, { fixTailwindFullReload } from "__VITEREX_PLUGIN_IMPORT_PATH__";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import viterex, { fixTailwindFullReload } from "__VITEREX_PLUGIN_IMPORT_PATH__";
 
 // Customize via:
 //   - viterex({ input: [...], refresh: [...], detectTls: false, injectConfig: false })
