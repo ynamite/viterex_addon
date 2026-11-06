@@ -1,13 +1,28 @@
 # Changelog
 
-## **Unreleased**
+## **Version 3.5.11**
+
+### Fixed
+
+- **New source files lost their Tailwind classes in dev.** With `fixTailwindFullReload()` (Tailwind's `hotUpdate`
+  removed), the CSS was rebuilt only when a file Tailwind had already scanned changed. A new module, fragment or
+  template is no dependency yet, so the reload after adding it still got the cached CSS. `fixTailwindFullReload()` now
+  invalidates the CSS modules on every added file.
+- **SVG optimisation destroyed authored structure.** SVGO's `preset-default` removed "unused" ids, collapsed groups and
+  merged paths, which broke SVGs whose ids are CSS/JS hooks (e.g. animated chart groups) and made id collisions between
+  inlined SVGs likelier (shortened ids). `cleanupIds`, `collapseGroups` and `mergePaths` are off now; scope ids per file
+  at inline time with `IdPrefixer` (as `Assets::inline()` does).
 
 ### Changed
 
-- **Project stubs sort CSS properties with Stylelint.** `npm run format`
-  runs Stylelint's fix pass after Prettier, using `stylelint-order` and
-  `stylelint-config-recess-order`. The two Prettier CSS sort plugins are
-  removed; Prettier continues to format CSS and sort Tailwind classes.
+- **Builds no longer rewrite the media pool.** `buildStart` optimised every SVG in `media_dir` in place, changing the
+  client's files behind REDAXO's back (`rex_media` kept the old size and date). Uploads on staging/prod are still
+  optimised on the way in (`SvgHook`); to clean the pool by hand, run `bin/console viterex:optimize-svgs`.
+  `src/assets` is still optimised on dev start and build.
+- **Project stubs sort CSS properties with Stylelint.** `npm run format` runs Stylelint's fix pass after Prettier,
+  using `stylelint-order` and `stylelint-config-recess-order`. The two Prettier CSS sort plugins are removed; Prettier
+  continues to format CSS and sort Tailwind classes.
+- **`stubs/package.json`:** `vite-plugin-live-reload` bumped to `^4.0.0`.
 
 ## **Version 3.5.10**
 

@@ -8,7 +8,7 @@
  *
  * Plugin notes:
  *
- *   - `preset-default` is SVGO's standard size pass.
+ *   - `preset-default` is SVGO's standard size pass, minus the steps that destroy authored structure (see below).
  *   - `removeScripts` is OFF in v4's preset-default but is the plugin that
  *     strips both `<script>` elements AND `on*` event-handler attributes —
  *     the security-relevant pieces for media-pool uploads.
@@ -21,5 +21,17 @@
  */
 export default {
 	multipass: true,
-	plugins: ["preset-default", "removeScripts"],
+	plugins: [
+		{
+			name: "preset-default",
+			params: {
+				// Keep the authored structure: ids (CSS/JS hooks, e.g. chart groups `series` / `bars`), groups and
+				// separate paths (one animated element per bar). Stripping and shortening ids does not prevent
+				// collisions between inlined SVGs either, it makes them likelier (`a`, `b`, …); IdPrefixer scopes ids
+				// per file at inline time instead. Costs a few percent of file size.
+				overrides: { cleanupIds: false, collapseGroups: false, mergePaths: false },
+			},
+		},
+		"removeScripts",
+	],
 };

@@ -414,11 +414,10 @@ ViteRex optimiert SVGs automatisch — sowohl Source-Dateien im Build als auch M
 | ---------------- | -------------------------------------------------- | ------------------------------------------------ |
 | Source-Assets    | `npm run dev` (server start) + `npm run build`     | SVGO (Node, via Vite-Plugin), 1:1 in-place       |
 | Vite copy-pipe   | `npm run build` (`viteStaticCopy` transform)       | SVGO                                             |
-| Mediapool        | `npm run build`                                    | SVGO (Vite-Plugin walked `<media_dir>`)          |
 | Mediapool        | Manuell: `bin/console viterex:optimize-svgs`       | SVGO wenn verfügbar, sonst `PhpOptimizer` (PHP)  |
 | Mediapool-Upload | `MEDIA_ADDED` / `MEDIA_UPDATED` (nur prod/staging) | `PhpOptimizer` (Node-frei für die Live-Umgebung) |
 
-In **dev** ist der Mediapool-Upload-Hook ein No-op — kein SVGO-Shell-out bei jedem Test-Upload. Räume mit `npm run build` oder dem Console-Command auf, wenn du willst.
+In **dev** ist der Mediapool-Upload-Hook ein No-op — kein SVGO-Shell-out bei jedem Test-Upload. Räume bei Bedarf mit dem Console-Command auf. `npm run build` fasst den Mediapool nicht an (sonst würden Dateien hinter REDAXOs Rücken geändert, `rex_media` behielte alte Grösse/Datum).
 
 **Sicherheits-Effekt fürs Mediapool**: `<script>`-Tags und `on*`-Event-Handler werden bei jedem Prod/Staging-Upload entfernt — schliesst eine standardmässig vorhandene XSS-Lücke beim Hochladen von SVGs in Redaxo.
 

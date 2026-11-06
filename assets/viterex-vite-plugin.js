@@ -245,10 +245,12 @@ function sha1(content) {
 }
 
 /**
- * SVG optimization plugin. In dev (`configureServer`): walks
- * `<assets_source_dir>` and optimizes 1:1 in place. In build
- * (`buildStart`): walks `<assets_source_dir>` AND `<media_dir>` so
- * `npm run build` produces a clean media-pool too. The shared
+ * SVG optimization plugin. In dev (`configureServer`) and build
+ * (`buildStart`): walks `<assets_source_dir>` and optimizes 1:1 in place.
+ * The media pool is NOT touched here: uploads are optimized on the way in
+ * (lib/Svg/SvgHook.php), and rewriting `<media_dir>` on build changed the
+ * client's files behind REDAXO's back (rex_media kept the old size/date,
+ * caches keyed on them went stale). The shared
  * OptimizationCache (sidecar JSON at `<cache_dir>/svg-optimized.json`)
  * means subsequent runs skip files that haven't changed since their
  * last optimize.
@@ -256,7 +258,7 @@ function sha1(content) {
  * Skipped (returns null) when toggle is disabled — caller filters nulls
  * out of the plugin array.
  */
-function svgOptimizePlugin({ enabled, srcDir, mediaDir, cachePath }) {
+function svgOptimizePlugin({ enabled, srcDir, cachePath }) {
 	if (!enabled) return null;
 	const scanned = new Set();
 	const cache = loadOptimizationCache(cachePath);
@@ -285,7 +287,6 @@ function svgOptimizePlugin({ enabled, srcDir, mediaDir, cachePath }) {
 		name: "viterex:svg-optimize",
 		async buildStart() {
 			await scanDir(srcDir, "assets");
-			await scanDir(mediaDir, "media");
 			persistOptimizationCache(cachePath, cache);
 		},
 		configureServer(server) {
@@ -377,12 +378,10 @@ export default function viterex(options = {}) {
 	// when the user upgraded from v3.2.x and the backend hasn't re-synced
 	// `structure.json` yet — still gets optimization. Only an explicit
 	// `false` (user toggled off in Settings) disables.
-	const mediaDirFs = structure.media_dir ? path.resolve(cwd, structure.media_dir) : null;
 	const cacheFs = structure.cache_dir ? path.resolve(cwd, structure.cache_dir, "svg-optimized.json") : null;
 	const svgOptimize = svgOptimizePlugin({
 		enabled: structure.svg_optimize_enabled !== false,
 		srcDir: assetsSourceFs,
-		mediaDir: mediaDirFs,
 		cachePath: cacheFs,
 	});
 
@@ -472,6 +471,19 @@ export function fixTailwindFullReload() {
 		configResolved(config) {
 			const plugin = config.plugins.find((p) => p.name === "@tailwindcss/vite:generate:serve");
 			delete plugin?.hotUpdate;
+		},
+		// Without that hook, Tailwind's CSS is rebuilt only when a file it already scanned changes (those are its
+		// watch dependencies). A NEW file (a new module, fragment, template) is no dependency yet, so the reload that
+		// follows still got the cached CSS without the new file's classes. Invalidate the CSS modules on every add, so
+		// the next request rebuilds and rescans.
+		configureServer(server) {
+			server.watcher.on("add", () => {
+				for (const mod of server.moduleGraph.idToModuleMap.values()) {
+					if (mod.file && /\.(css|pcss|postcss|scss|sass|less|styl)$/.test(mod.file)) {
+						server.moduleGraph.invalidateModule(mod);
+					}
+				}
+			});
 		},
 	};
 }
