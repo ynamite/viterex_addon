@@ -1,6 +1,6 @@
 # Changelog
 
-## **Unreleased**
+## **Version 3.5.12**
 
 ### Fixed
 
@@ -9,6 +9,8 @@
   `vite-plugin-static-copy` 4.1 and Vite 8.
 - **Scaffolded Vite config imports follow Biome's order** for both modern and classic layouts.
 - **Since 3.5.11, `format` exits non-zero for CSS errors Stylelint cannot fix**, rather than reporting success after Prettier.
+- **The addon's own badge build declares Vite 8's Node minimum** (`^20.19.0 || >=22.12.0`, was `>=18`). Affects only
+  contributors building this repo, not user projects.
 
 ## **Version 3.5.11**
 

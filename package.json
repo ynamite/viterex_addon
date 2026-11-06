@@ -1,6 +1,6 @@
 {
   "name": "viterex-assets",
-  "version": "3.5.11",
+  "version": "3.5.12",
   "description": "Asset build for ViteRex Addon",
   "scripts": {
     "version:sync": "node scripts/sync-version.js",
@@ -26,7 +26,7 @@
     "vite": "^8.0.10"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": "^20.19.0 || >=22.12.0",
     "npm": ">=9.0.0"
   },
   "private": true
