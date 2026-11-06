@@ -8,7 +8,7 @@
 - **Project stubs declare the toolchain's Node minimum:** Node.js `^22.12.0 || >=24.0.0`, required by
   `vite-plugin-static-copy` 4.1 and Vite 8.
 - **Scaffolded Vite config imports follow Biome's order** for both modern and classic layouts.
-- **`format` now exits non-zero for CSS errors Stylelint cannot fix**, rather than reporting success after Prettier.
+- **Since 3.5.11, `format` exits non-zero for CSS errors Stylelint cannot fix**, rather than reporting success after Prettier.
 
 ## **Version 3.5.11**
 
