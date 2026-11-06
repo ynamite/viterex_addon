@@ -7,7 +7,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"setup-https": "mkcert -install && mkcert localhost 127.0.0.1 ::1",
-		"format": "biome format --write && prettier --write \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{html,css,scss}\"",
+		"format": "biome format --write && prettier --write \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{html,css,scss}\" && stylelint --fix \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{css,scss}\"",
 		"lint": "biome check && stylelint \"__VITEREX_ASSETS_SOURCE_DIR__/**/*.{css,scss}\""
 	},
 	"devDependencies": {
@@ -21,12 +21,12 @@
 		"lightningcss": "^1.32.0",
 		"mkcert": "^3.2.0",
 		"prettier": "^3.8.1",
-		"prettier-plugin-css-order": "^2.2.0",
 		"prettier-plugin-organize-attributes": "^1.0.0",
-		"prettier-plugin-style-order": "^0.2.2",
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"stylelint": "^17.9.0",
+		"stylelint-config-recess-order": "^7.10.0",
 		"stylelint-config-standard": "^40.0.0",
+		"stylelint-order": "^8.1.3",
 		"svgo": "^4.0.0",
 		"tailwind-clamp": "^4.5.1",
 		"tailwindcss": "^4.2.4",

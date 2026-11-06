@@ -111,6 +111,8 @@ Bereitgestellt werden folgende Dateien im Projekt-Root:
 - `.env.example`, `.browserslistrc`, `.prettierrc`, `biome.jsonc`, `stylelint.config.js`, `jsconfig.json`
 - `<assets_source_dir>/js/main.js` und `<assets_source_dir>/css/style.css` als Default-Einstiegspunkte
 
+`npm run format` führt Biome, Prettier und anschließend `stylelint --fix` aus: Prettier formatiert CSS und sortiert Tailwind-Klassen, Stylelint sortiert CSS-Eigenschaften nach Recess (`stylelint-order`).
+
 Außerdem wird die `.gitignore` Zeile-für-Zeile gescannt — fehlende ViteRex-Einträge (`.vite-hot`, `.vite-reload-trigger`, mkcert-Zertifikate) werden unter einer `# Added by viterex`-Markierung ergänzt.
 
 ### 3. Loslegen

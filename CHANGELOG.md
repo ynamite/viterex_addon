@@ -1,5 +1,14 @@
 # Changelog
 
+## **Unreleased**
+
+### Changed
+
+- **Project stubs sort CSS properties with Stylelint.** `npm run format`
+  runs Stylelint's fix pass after Prettier, using `stylelint-order` and
+  `stylelint-config-recess-order`. The two Prettier CSS sort plugins are
+  removed; Prettier continues to format CSS and sort Tailwind classes.
+
 ## **Version 3.5.10**
 
 ### Fixed
